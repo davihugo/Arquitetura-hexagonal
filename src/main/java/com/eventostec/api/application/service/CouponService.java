@@ -1,10 +1,10 @@
-package com.eventostec.api.service;
+package com.eventostec.api.application.service;
 
 import com.eventostec.api.domain.coupon.Coupon;
 import com.eventostec.api.domain.coupon.CouponRequestDTO;
 import com.eventostec.api.domain.event.Event;
-import com.eventostec.api.repositories.CouponRepository;
-import com.eventostec.api.repositories.EventRepository;
+import com.eventostec.api.adapters.outbound.repositories.CouponRepository;
+import com.eventostec.api.adapters.outbound.repositories.JpaEventRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -17,10 +17,10 @@ import java.util.UUID;
 public class CouponService {
 
     private final CouponRepository couponRepository;
-    private final EventRepository eventRepository;
+    private final JpaEventRepository jpaEventRepository;
 
     public Coupon addCouponToEvent(UUID eventId, CouponRequestDTO couponData) {
-        Event event = eventRepository.findById(eventId)
+        Event event = jpaEventRepository.findById(eventId)
                 .orElseThrow(() -> new IllegalArgumentException("Event not found"));
 
         Coupon coupon = new Coupon();

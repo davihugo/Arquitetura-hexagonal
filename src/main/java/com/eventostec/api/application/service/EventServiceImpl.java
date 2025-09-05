@@ -1,26 +1,22 @@
-package com.eventostec.api.service;
+package com.eventostec.api.application.service;
 
+import com.eventostec.api.adapters.outbound.storage.ImageUploaderPort;
+import com.eventostec.api.application.usecases.EventUseCases;
 import com.eventostec.api.domain.address.Address;
 import com.eventostec.api.domain.coupon.Coupon;
 import com.eventostec.api.domain.event.*;
-import com.eventostec.api.mappers.EventMapper;
-import com.eventostec.api.repositories.EventRepository;
+import com.eventostec.api.utils.mappers.EventMapper;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.multipart.MultipartFile;
-import software.amazon.awssdk.core.sync.RequestBody;
+
 import software.amazon.awssdk.services.s3.S3Client;
-import software.amazon.awssdk.services.s3.model.GetUrlRequest;
-import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
 
-import java.nio.ByteBuffer;
+
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
@@ -28,12 +24,10 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
-@Slf4j
 @RequiredArgsConstructor
-public class EventService {
+public class EventServiceImpl implements EventUseCases {
 
-    @Value("${aws.bucket.name}")
-    private String bucketName;
+
 
     @Value("${admin.key}")
     private String adminKey;
@@ -42,18 +36,18 @@ public class EventService {
     private final AddressService addressService;
     private final CouponService couponService;
     private final EventRepository repository;
+    private final ImageUploaderPort imageUploaderPort;
 
-    @Autowired
-    private EventMapper mapper;
+    private final EventMapper mapper;
 
     public Event createEvent(EventRequestDTO data) {
         String imgUrl = "";
 
 
         if (data.image() != null) {
-            imgUrl = this.uploadImg(data.image());
+            imgUrl = imageUploaderPort.uploadImage(data.image());
         }
-        Event newEvent = mapper.toEntity(data, imgUrl);
+        Event newEvent = mapper.dtoToEntity(data, imgUrl);
         repository.save(newEvent);
 
         if (Boolean.FALSE.equals(data.remote())) {
@@ -65,7 +59,7 @@ public class EventService {
 
     public List<EventResponseDTO> getUpcomingEvents(int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
-        Page<EventAddressProjection> eventsPage = this.repository.findUpcomingEvents(new Date(), pageable);
+        Page<EventAddressProjection> eventsPage = this.repository.findUpcomingEvents(page, size);
         return eventsPage.map(event -> new EventResponseDTO(
                         event.getId(),
                         event.getTitle(),
@@ -88,23 +82,7 @@ public class EventService {
 
         List<Coupon> coupons = couponService.consultCoupons(eventId, new Date());
 
-        List<EventDetailsDTO.CouponDTO> couponDTOs = coupons.stream()
-                .map(coupon -> new EventDetailsDTO.CouponDTO(
-                        coupon.getCode(),
-                        coupon.getDiscount(),
-                        coupon.getValid()))
-                .collect(Collectors.toList());
-
-        return new EventDetailsDTO(
-                event.getId(),
-                event.getTitle(),
-                event.getDescription(),
-                event.getDate(),
-                address.isPresent() ? address.get().getCity() : "",
-                address.isPresent() ? address.get().getUf() : "",
-                event.getImgUrl(),
-                event.getEventUrl(),
-                couponDTOs);
+        return mapper.domainToDetailsDto(event, address, coupons);
     }
 
     public void deleteEvent(UUID eventId, String adminKey){
@@ -112,10 +90,12 @@ public class EventService {
             throw new IllegalArgumentException("Invalid admin key");
         }
 
-        this.repository.delete(this.repository.findById(eventId)
-                .orElseThrow(() -> new IllegalArgumentException("Event not found")));
+        repository.findById(eventId)
+                .orElseThrow(() -> new IllegalArgumentException("Event not found"));
 
+        this.repository.deleteById(eventId);
     }
+
 
     public List<EventResponseDTO> searchEvents(String title){
         title = (title != null) ? title : "";
@@ -141,9 +121,7 @@ public class EventService {
         startDate = (startDate != null) ? startDate : new Date(0);
         endDate = (endDate != null) ? endDate : new Date();
 
-        Pageable pageable = PageRequest.of(page, size);
-
-        Page<EventAddressProjection> eventsPage = this.repository.findFilteredEvents(city, uf, startDate, endDate, pageable);
+        Page<EventAddressProjection> eventsPage = this.repository.findFilteredEvents(city, uf, startDate, endDate, page, size);
         return eventsPage.map(event -> new EventResponseDTO(
                         event.getId(),
                         event.getTitle(),
@@ -156,26 +134,6 @@ public class EventService {
                         event.getImgUrl())
                 )
                 .stream().toList();
-    }
-
-    private String uploadImg(MultipartFile multipartFile) {
-        String filename = UUID.randomUUID() + "-" + multipartFile.getOriginalFilename();
-
-        try {
-            PutObjectRequest putOb = PutObjectRequest.builder()
-                    .bucket(bucketName)
-                    .key(filename)
-                    .build();
-            s3Client.putObject(putOb, RequestBody.fromByteBuffer(ByteBuffer.wrap(multipartFile.getBytes())));
-            GetUrlRequest request = GetUrlRequest.builder()
-                    .bucket(bucketName)
-                    .key(filename)
-                    .build();
-            return s3Client.utilities().getUrl(request).toString();
-        } catch (Exception e) {
-            log.error("erro ao subir arquivo: {}", e.getMessage());
-            return "";
-        }
     }
 
 }

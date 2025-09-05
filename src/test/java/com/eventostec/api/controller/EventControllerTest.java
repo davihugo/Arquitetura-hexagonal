@@ -1,10 +1,11 @@
 package com.eventostec.api.controller;
 
+import com.eventostec.api.adapters.inbound.controller.EventController;
 import com.eventostec.api.domain.event.Event;
 import com.eventostec.api.domain.event.EventDetailsDTO;
 import com.eventostec.api.domain.event.EventRequestDTO;
 import com.eventostec.api.domain.event.EventResponseDTO;
-import com.eventostec.api.service.EventService;
+import com.eventostec.api.application.service.EventServiceImpl;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,7 +32,7 @@ class EventControllerTest {
     private MockMvc mockMvc;
 
     @MockBean
-    private EventService eventService;
+    private EventServiceImpl eventServiceImpl;
 
     @Autowired
     private ObjectMapper objectMapper;
@@ -41,7 +42,7 @@ class EventControllerTest {
         EventRequestDTO requestDTO = new EventRequestDTO("Evento Teste", "Descrição do evento", new Date().getTime(), "Cidade Teste", "UF", true, "https://evento.com", null);
         Event responseEvent = new Event();
 
-        when(eventService.createEvent(requestDTO)).thenReturn(responseEvent);
+        when(eventServiceImpl.createEvent(requestDTO)).thenReturn(responseEvent);
 
         mockMvc.perform(multipart("/api/event")
                         .file("image", new byte[0])
@@ -75,7 +76,7 @@ class EventControllerTest {
                 coupons
         );
 
-        when(eventService.getEventDetails(eventId)).thenReturn(eventDetailsDTO);
+        when(eventServiceImpl.getEventDetails(eventId)).thenReturn(eventDetailsDTO);
 
         mockMvc.perform(get("/api/event/{eventId}", eventId))
                 .andExpect(status().isOk())
@@ -86,7 +87,7 @@ class EventControllerTest {
     void test_getEvents() throws Exception {
         List<EventResponseDTO> responseList = getEventResponseDTO();
 
-        when(eventService.getUpcomingEvents(0, 10)).thenReturn(responseList);
+        when(eventServiceImpl.getUpcomingEvents(0, 10)).thenReturn(responseList);
 
         mockMvc.perform(get("/api/event")
                         .param("page", "0")
@@ -100,7 +101,7 @@ class EventControllerTest {
         UUID eventId = UUID.randomUUID();
         String adminKey = "testAdminKey";
 
-        doNothing().when(eventService).deleteEvent(eventId, adminKey);
+        doNothing().when(eventServiceImpl).deleteEvent(eventId, adminKey);
 
         mockMvc.perform(delete("/api/event/{eventId}", eventId)
                         .content(adminKey)
@@ -114,7 +115,7 @@ class EventControllerTest {
         String startDate = "2024-10-24";
         String endDate = "2024-10-25";
 
-        when(eventService.getFilteredEvents(0, 10, "Brasilia", "DF",
+        when(eventServiceImpl.getFilteredEvents(0, 10, "Brasilia", "DF",
                 new SimpleDateFormat("yyyy-MM-dd").parse(startDate),
                 new SimpleDateFormat("yyyy-MM-dd").parse(endDate))).thenReturn(responseList);
 
@@ -133,7 +134,7 @@ class EventControllerTest {
     void test_getSearchEvents() throws Exception {
         List<EventResponseDTO> responseList = getEventResponseDTO();
 
-        when(eventService.searchEvents("evento")).thenReturn(responseList);
+        when(eventServiceImpl.searchEvents("evento")).thenReturn(responseList);
 
         mockMvc.perform(get("/api/event/search")
                         .param("title", "evento"))

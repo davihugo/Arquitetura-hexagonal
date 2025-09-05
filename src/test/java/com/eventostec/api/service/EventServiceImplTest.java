@@ -1,7 +1,10 @@
 package com.eventostec.api.service;
 
+import com.eventostec.api.application.service.AddressService;
+import com.eventostec.api.application.service.CouponService;
+import com.eventostec.api.application.service.EventServiceImpl;
 import com.eventostec.api.domain.event.*;
-import com.eventostec.api.repositories.EventRepository;
+import com.eventostec.api.adapters.outbound.repositories.JpaEventRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
@@ -23,7 +26,7 @@ import java.util.*;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-class EventServiceTest {
+class EventServiceImplTest {
 
     @Mock
     private S3Client s3Client;
@@ -38,10 +41,10 @@ class EventServiceTest {
     private CouponService couponService;
 
     @Mock
-    private EventRepository repository;
+    private JpaEventRepository repository;
 
     @InjectMocks
-    private EventService eventService;
+    private EventServiceImpl eventServiceImpl;
 
     private final String adminKey = "test-admin-key";
     private final String bucketName = "test-bucket";
@@ -49,10 +52,10 @@ class EventServiceTest {
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
-        eventService = new EventService(s3Client, addressService, couponService, repository);
+        eventServiceImpl = new EventServiceImpl(s3Client, addressService, couponService, repository);
         // Configurando valores diretamente nos atributos usando ReflectionTestUtils
-        ReflectionTestUtils.setField(eventService, "adminKey", adminKey);
-        ReflectionTestUtils.setField(eventService, "bucketName", bucketName);
+        ReflectionTestUtils.setField(eventServiceImpl, "adminKey", adminKey);
+        ReflectionTestUtils.setField(eventServiceImpl, "bucketName", bucketName);
         // Mockando S3Utilities
         when(s3Client.utilities()).thenReturn(s3Utilities);
     }
@@ -64,7 +67,7 @@ class EventServiceTest {
 
         when(repository.save(any(Event.class))).thenReturn(event);
 
-        Event savedEvent = eventService.createEvent(requestDTO);
+        Event savedEvent = eventServiceImpl.createEvent(requestDTO);
 
         assertNotNull(savedEvent);
         verify(repository, times(1)).save(any(Event.class));
@@ -78,7 +81,7 @@ class EventServiceTest {
 
         when(repository.findUpcomingEvents(any(Date.class), eq(pageable))).thenReturn(eventsPage);
 
-        List<EventResponseDTO> result = eventService.getUpcomingEvents(0, 10);
+        List<EventResponseDTO> result = eventServiceImpl.getUpcomingEvents(0, 10);
 
         assertFalse(result.isEmpty());
         verify(repository, times(1)).findUpcomingEvents(any(Date.class), eq(pageable));
@@ -98,7 +101,7 @@ class EventServiceTest {
         when(addressService.findByEventId(eventId)).thenReturn(Optional.empty());
         when(couponService.consultCoupons(eventId, new Date())).thenReturn(Collections.emptyList());
 
-        EventDetailsDTO result = eventService.getEventDetails(eventId);
+        EventDetailsDTO result = eventServiceImpl.getEventDetails(eventId);
 
         assertNotNull(result);
         assertEquals(eventId, result.id());
@@ -114,7 +117,7 @@ class EventServiceTest {
         when(repository.findById(eventId)).thenReturn(Optional.of(event));
 
         // Use a mesma chave de administrador configurada
-        eventService.deleteEvent(eventId, adminKey);
+        eventServiceImpl.deleteEvent(eventId, adminKey);
 
         verify(repository, times(1)).delete(event);
     }
@@ -126,7 +129,7 @@ class EventServiceTest {
 
         when(repository.findEventsByTitle(title)).thenReturn(events);
 
-        List<EventResponseDTO> result = eventService.searchEvents(title);
+        List<EventResponseDTO> result = eventServiceImpl.searchEvents(title);
 
         assertFalse(result.isEmpty());
         verify(repository, times(1)).findEventsByTitle(title);
@@ -140,7 +143,7 @@ class EventServiceTest {
 
         when(repository.findFilteredEvents(anyString(), anyString(), any(Date.class), any(Date.class), eq(pageable))).thenReturn(eventsPage);
 
-        List<EventResponseDTO> result = eventService.getFilteredEvents(0, 10, "Cidade Teste", "UF", new Date(), new Date());
+        List<EventResponseDTO> result = eventServiceImpl.getFilteredEvents(0, 10, "Cidade Teste", "UF", new Date(), new Date());
 
         assertFalse(result.isEmpty());
         verify(repository, times(1)).findFilteredEvents(anyString(), anyString(), any(Date.class), any(Date.class), eq(pageable));
@@ -153,8 +156,8 @@ class EventServiceTest {
         when(multipartFile.getOriginalFilename()).thenReturn("imagem.jpg");
         when(s3Utilities.getUrl(any(GetUrlRequest.class))).thenReturn(URI.create("https://s3.amazonaws.com/teste/imagem.jpg").toURL());
 
-        ReflectionTestUtils.setField(eventService, "bucketName", bucketName);
-        String result = ReflectionTestUtils.invokeMethod(eventService, "uploadImg", multipartFile);
+        ReflectionTestUtils.setField(eventServiceImpl, "bucketName", bucketName);
+        String result = ReflectionTestUtils.invokeMethod(eventServiceImpl, "uploadImg", multipartFile);
 
         assertNotNull(result);
         assertTrue(result.contains("https://s3.amazonaws.com"));
