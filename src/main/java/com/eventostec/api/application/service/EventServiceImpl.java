@@ -6,7 +6,6 @@ import com.eventostec.api.domain.address.Address;
 import com.eventostec.api.domain.coupon.Coupon;
 import com.eventostec.api.domain.event.*;
 import com.eventostec.api.utils.mappers.EventMapper;
-import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -24,10 +23,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
-@RequiredArgsConstructor
 public class EventServiceImpl implements EventUseCases {
-
-
 
     @Value("${admin.key}")
     private String adminKey;
@@ -37,8 +33,17 @@ public class EventServiceImpl implements EventUseCases {
     private final CouponService couponService;
     private final EventRepository repository;
     private final ImageUploaderPort imageUploaderPort;
-
     private final EventMapper mapper;
+
+    public EventServiceImpl(S3Client s3Client, AddressService addressService, CouponService couponService,
+                            EventRepository repository, ImageUploaderPort imageUploaderPort, EventMapper mapper) {
+        this.s3Client = s3Client;
+        this.addressService = addressService;
+        this.couponService = couponService;
+        this.repository = repository;
+        this.imageUploaderPort = imageUploaderPort;
+        this.mapper = mapper;
+    }
 
     public Event createEvent(EventRequestDTO data) {
         String imgUrl = "";
@@ -48,13 +53,13 @@ public class EventServiceImpl implements EventUseCases {
             imgUrl = imageUploaderPort.uploadImage(data.image());
         }
         Event newEvent = mapper.dtoToEntity(data, imgUrl);
-        repository.save(newEvent);
+        Event savedEvent = repository.save(newEvent);
 
         if (Boolean.FALSE.equals(data.remote())) {
-            this.addressService.createAddress(data, newEvent);
+            this.addressService.createAddress(data, savedEvent);
         }
 
-        return newEvent;
+        return savedEvent;
     }
 
     public List<EventResponseDTO> getUpcomingEvents(int page, int size) {

@@ -1,6 +1,5 @@
 package com.eventostec.api.infrastructure.config.exceptions;
 
-import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -10,7 +9,6 @@ import lombok.Setter;
  */
 @Getter
 @Setter
-@AllArgsConstructor
 @NoArgsConstructor
 public class ProblemDetails {
     private String title;
@@ -18,4 +16,12 @@ public class ProblemDetails {
     private String status;
     private String detail;
     private String instance;
+    
+    public ProblemDetails(String title, Integer code, String status, String detail, String instance) {
+        this.title = title;
+        this.code = code;
+        this.status = status;
+        this.detail = detail;
+        this.instance = instance;
+    }
 }

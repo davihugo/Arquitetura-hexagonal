@@ -1,10 +1,7 @@
 package com.eventostec.api.adapters.outbound.entities;
 
 import com.eventostec.api.domain.event.Event;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -21,7 +18,7 @@ import java.util.UUID;
 @AllArgsConstructor
 public class JpaEventEntity {
     @Id
-    @GeneratedValue
+    @GeneratedValue(strategy = GenerationType.AUTO)
     private UUID id;
 
     private String title;
@@ -29,10 +26,13 @@ public class JpaEventEntity {
     private String imgUrl;
     private String eventUrl;
     private Boolean remote;
+
+    @Temporal(TemporalType.TIMESTAMP)
     private Date date;
 
+
     public JpaEventEntity(Event event){
-        this.id = event.getId();
+        // id is auto-generated, don't set it from domain
         this.title = event.getTitle();
         this.description = event.getDescription();
         this.imgUrl = event.getImgUrl();
@@ -40,4 +40,26 @@ public class JpaEventEntity {
         this.remote = event.getRemote();
         this.date = event.getDate();
     }
+
+    // Explicit getters and setters for MapStruct compatibility
+    public UUID getId() { return id; }
+    public void setId(UUID id) { this.id = id; }
+    
+    public String getTitle() { return title; }
+    public void setTitle(String title) { this.title = title; }
+    
+    public String getDescription() { return description; }
+    public void setDescription(String description) { this.description = description; }
+    
+    public String getImgUrl() { return imgUrl; }
+    public void setImgUrl(String imgUrl) { this.imgUrl = imgUrl; }
+    
+    public String getEventUrl() { return eventUrl; }
+    public void setEventUrl(String eventUrl) { this.eventUrl = eventUrl; }
+    
+    public Boolean getRemote() { return remote; }
+    public void setRemote(Boolean remote) { this.remote = remote; }
+    
+    public Date getDate() { return date; }
+    public void setDate(Date date) { this.date = date; }
 }

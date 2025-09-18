@@ -1,20 +1,23 @@
 package com.eventostec.api.domain.event;
 
+import java.util.Date;
+import java.util.UUID;
+
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
-
-import java.util.Date;
-import java.util.UUID;
+import jakarta.persistence.Temporal;
+import jakarta.persistence.TemporalType;
+import org.hibernate.annotations.UuidGenerator;
 
 
+@Entity
+@Table(name = "events")
 public class Event {
 
+    @Id
+    @UuidGenerator
     private UUID id;
 
     private String title;
@@ -22,11 +25,10 @@ public class Event {
     private String imgUrl;
     private String eventUrl;
     private Boolean remote;
+    @Temporal(TemporalType.TIMESTAMP)
     private Date date;
 
-    public Event() {
-
-    }
+    public Event() {}
 
     public Event(UUID id, String title, String description, String imgUrl, String eventUrl, Boolean remote, Date date) {
         this.id = id;

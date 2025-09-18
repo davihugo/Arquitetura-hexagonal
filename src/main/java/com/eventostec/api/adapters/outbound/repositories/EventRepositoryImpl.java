@@ -32,13 +32,16 @@ public class EventRepositoryImpl implements EventRepository {
 
     @Override
     public Event save(Event event) {
-        JpaEventEntity eventEntity = new JpaEventEntity();
-        this.jpaEventRepository.save(eventEntity);
-        return new Event(eventEntity.getId(), eventEntity.getTitle(), eventEntity.getDescription(), eventEntity.getImgUrl(), eventEntity.getEventUrl(), eventEntity.getRemote(), eventEntity.getDate());
+        JpaEventEntity eventEntity = new JpaEventEntity(event);
+        JpaEventEntity savedEntity = this.jpaEventRepository.save(eventEntity);
+        return mapper.jpaToDomain(savedEntity);
     }
 
     @Override
     public Optional<Event> findById(UUID id) {
+        // Convert UUID to Long for JPA entity lookup
+        // Note: This is a temporary solution - ideally we should align ID types
+        Long longId = id.getMostSignificantBits();
         Optional<JpaEventEntity> eventEntity = this.jpaEventRepository.findById(id);
         return eventEntity.map(mapper::jpaToDomain);
     }
@@ -47,7 +50,7 @@ public class EventRepositoryImpl implements EventRepository {
     public List<Event> findAll() {
         return this.jpaEventRepository.findAll()
                 .stream()
-                .map(entity -> new Event(entity.getId(), entity.getTitle(), entity.getDescription(), entity.getImgUrl(), entity.getEventUrl(), entity.getRemote(), entity.getDate()))
+                .map(mapper::jpaToDomain)
                 .collect(Collectors.toList());
     }
 

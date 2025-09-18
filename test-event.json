@@ -1,0 +1,9 @@
+{
+  "title": "Workshop Spring Boot",
+  "description": "Aprenda Spring Boot na prática com exemplos reais",
+  "date": "2024-12-31T10:00:00",
+  "city": "São Paulo",
+  "state": "SP",
+  "remote": false,
+  "eventUrl": "https://workshop.springboot.com"
+}

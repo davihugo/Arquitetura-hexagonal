@@ -1,6 +1,5 @@
 package com.eventostec.api.adapters.outbound.storage;
 
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -15,13 +14,16 @@ import java.util.UUID;
 
 @Component
 @Slf4j
-@RequiredArgsConstructor
 public class ImageUploaderAdapter {
 
     @Value("${aws.bucket.name}")
     private String bucketName;
 
     private final S3Client s3Client;
+    
+    public ImageUploaderAdapter(S3Client s3Client) {
+        this.s3Client = s3Client;
+    }
 
     private String uploadImg(MultipartFile multipartFile) {
         String filename = UUID.randomUUID() + "-" + multipartFile.getOriginalFilename();
@@ -38,7 +40,7 @@ public class ImageUploaderAdapter {
                     .build();
             return s3Client.utilities().getUrl(request).toString();
         } catch (Exception e) {
-            log.error("erro ao subir arquivo: {}", e.getMessage());
+            System.err.println("erro ao subir arquivo: " + e.getMessage());
             return "";
         }
     }

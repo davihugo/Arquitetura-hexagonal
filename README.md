@@ -119,7 +119,7 @@ export AWS_BUCKET_NAME=seu_bucket_s3
 ./mvnw spring-boot:run
 ```
 
-A API estará disponível em `http://localhost:8080`
+A API estará disponível em `http://localhost:8090`
 
 ## 📚 Documentação da API
 
@@ -211,6 +211,7 @@ docker run -d -p 80:80 kipperdev/backend-eventostec:3.0
 
 ## 🧪 Executando Testes
 
+### Testes Unitários
 ```bash
 # Executar todos os testes
 ./mvnw test
@@ -222,7 +223,78 @@ docker run -d -p 80:80 kipperdev/backend-eventostec:3.0
 open target/site/jacoco/index.html
 ```
 
+### Testando a API Manualmente
+
+#### 1. Iniciar a Aplicação
+```bash
+# Compilar e executar
+./mvnw spring-boot:run
+```
+
+#### 2. Testar Endpoints com cURL
+
+**Criar um evento:**
+```bash
+curl -X POST http://localhost:8090/api/event \
+  -F "title=Workshop Spring Boot" \
+  -F "description=Aprenda Spring Boot na prática" \
+  -F "date=2024-12-31T10:00:00" \
+  -F "city=São Paulo" \
+  -F "state=SP" \
+  -F "remote=false" \
+  -F "eventUrl=https://workshop.com" \
+  -F "image=@caminho/para/imagem.jpg"
+```
+
+**Listar eventos:**
+```bash
+curl http://localhost:8090/api/event?page=0&size=10
+```
+
+**Buscar eventos por título:**
+```bash
+curl "http://localhost:8090/api/event/search?title=Spring"
+```
+
+**Obter detalhes de um evento:**
+```bash
+curl http://localhost:8090/api/event/{EVENT_ID}
+```
+
+**Criar cupom para evento:**
+```bash
+curl -X POST http://localhost:8090/api/coupon/event/{EVENT_ID} \
+  -H "Content-Type: application/json" \
+  -d '{
+    "code": "DESCONTO20",
+    "discount": 20,
+    "valid": 30
+  }'
+```
+
+#### 3. Testar com Swagger UI
+Acesse: `http://localhost:8090/swagger-ui.html`
+
+#### 4. Verificar Saúde da Aplicação
+```bash
+# Verificar se a aplicação está rodando
+curl http://localhost:8090/actuator/health
+```
+
 ## 🔧 Configuração
+
+### Correções Recentes
+
+#### Problema de Tipos UUID Resolvido
+Corrigimos incompatibilidades de tipos entre `UUID` e `Long` nos repositórios:
+- `EventRepositoryImpl`: Removida conversão desnecessária de UUID para Long
+- `CouponService`: Corrigido uso direto de UUID nos métodos de busca
+
+#### Implementação do ImageUploaderPort
+Criamos a implementação `S3ImageUploader` para resolver o erro de inicialização:
+- Integração completa com AWS S3
+- Upload seguro de imagens com nomes únicos
+- Configuração via properties do Spring
 
 ### Variáveis de Ambiente Necessárias
 
@@ -232,7 +304,6 @@ open target/site/jacoco/index.html
 | `DB_USER` | Usuário do banco | `postgres` |
 | `DB_PASSWORD` | Senha do banco | `sua_senha` |
 | `ADMIN_KEY` | Chave para operações administrativas | `sua_chave_secreta` |
-| `AWS_REGION` | Região da AWS | `us-east-1` |
 | `AWS_BUCKET_NAME` | Nome do bucket S3 | `eventostec-imagens` |
 
 ## 🤝 Contribuindo
