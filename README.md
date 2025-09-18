@@ -314,22 +314,7 @@ Criamos a implementação `S3ImageUploader` para resolver o erro de inicializaç
 4. Push para a branch (`git push origin feature/AmazingFeature`)
 5. Abra um Pull Request
 
-## 📝 Licença
-
-Este projeto está sob a licença MIT. Veja o arquivo [LICENSE](LICENSE) para mais detalhes.
-
-## 👥 Autores
-
-- **Seu Nome** - *Desenvolvimento inicial* - [seu-github](https://github.com/seu-usuario)
-
-## 🙏 Agradecimentos
-
-- Spring Boot team pela excelente documentação
-- Comunidade Java pelo suporte
-- AWS pela infraestrutura confiável
-
----
 
 <div align="center">
-  Feito com ❤️ e ☕ por <a href="https://github.com/seu-usuario">Seu Nome</a>
+  Feito com ❤️ e ☕ por <a href="https://github.com/davihugo">Davi Hugo</a>
 </div>
